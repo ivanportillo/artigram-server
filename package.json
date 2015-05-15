@@ -1,6 +1,7 @@
 {
   "name": "telegram-notifications",
   "dependencies": {
+    "express": "^4.12.3",
     "node-netcat": "^1.4.8",
     "telnet-client": "0.0.8"
   }
