@@ -28,6 +28,20 @@ if [ "$variable" != "es" ]; then
 		else
 			echo -e "\E[32mPackage git found.\e[0m"
 		fi
+		if [ -d $HOME/tg ]; then
+			echo -e "\E[31m¡Error! There is already a folder named \"$HOME/tg\"\e[0m"
+		else
+			sudo apt-get update
+			sudo apt-get install libreadline-dev libconfig-dev libssl-dev lua5.2 liblua5.2-dev libevent-dev lua-lgi glib-2.0 make git-core libjansson-dev
+			cd $HOME && git clone --recursive https://github.com/vysheng/tg.git && cd tg
+			./configure && make
+			clear
+			echo -e -n "\E[32m\E[4mTelegram Notification System\E[m\E[32m has been installed in $HOME/tg. The client will start for first time.\
+			\nIn this place, you will have to introduce your phone number. \E[33mEx. +34666666666\e[0m\
+			\n\nPress \E[4mENTER\E[m to continue."
+			read INTRO
+			bin/telegram-cli -k tg-server.pub
+		fi
 	fi
 else
 	while [ "$valor" != "S" -a "$valor" != "N" ]; do
@@ -54,6 +68,20 @@ else
 			sudo apt-get install git
 		else
 			echo -e "\E[32mPaquete git encontrado.\e[0m"
+		fi
+		if [ -d $HOME/tg ]; then
+			echo -e "\E[31m¡Error! Ya existe la carpeta \"$HOME/tg\"\e[0m"
+		else
+			sudo apt-get update
+			sudo apt-get install libreadline-dev libconfig-dev libssl-dev lua5.2 liblua5.2-dev libevent-dev lua-lgi glib-2.0 make git-core libjansson-dev
+			cd $HOME && git clone --recursive https://github.com/vysheng/tg.git && cd tg
+			./configure && make
+			clear
+			echo -e -n "\E[32mSe ha instalado el \E[4mCliente de Telegram\E[m\E[32m en $HOME/tg. Se va a iniciar el cliente por primera vez.\
+\nDeberá introducir su número de teléfono. \E[33mEj: +34666666666\e[0m\
+\n\nPulse \E[4mINTRO\E[m para continuar."
+			read INTRO
+			bin/telegram-cli -k tg-server.pub
 		fi
 	fi
 fi
