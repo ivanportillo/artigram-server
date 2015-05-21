@@ -1,0 +1,10 @@
+Eliminados asertos de TELEGRAM-CLI en fichero loop.c sobre secret_chat7
+
+
+RESPUESTAS TELNET
+TRAS AÑADIR CONTACTO:
+-ANSWER 12 (Guardado correctamente)
+-ANSWER 16 (Contacto ya existente)
+
+TRAS ENVIAR MENSAJE:
+-ANSWERR 8 (Mensaje enviado)

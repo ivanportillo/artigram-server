@@ -1,52 +1,74 @@
 var exec = require('child_process').exec,
     home = process.env.HOME,
-    user = process.env.USER,
     command = "cd " + home + "/tg/ && bin/telegram-cli -vvvvRC -k tg-server.pub -W -dL tg.log -P 1234 -l 1 -E",
-    child = exec(command),
-    connected = false,
     http = require('http'),
     express = require('express'),
+    bodyParser      = require("body-parser"),
+    methodOverride  = require("method-override"),
+    mongoose        = require('mongoose'),
     app = express(),
-    bool;
+    child,
+    dirname = __dirname;
+
+// MIDDLEWARES
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(methodOverride());
+
+// EJECUCION PROCESO
+child = exec(command, function(){
+    console.log("Telegram process initiated with PID " + child.pid);
+});
 
 child.stdout.on('data', function(data) {
     console.log('stdout: ' + data);
 });
 
-console.log("Telegram process initiated with PID " + child.pid)
-
+//CONTROL SALIDA
 process.on('exit', function(){
-  console.log("EXIT NODE");
+    console.log("EXIT NODE");
 });
 
 process.on('uncaughtException', function(){
-  console.log("uncaughtException");
+    console.log("uncaughtException");
 });
 
-var net = require('net');
-var conn = net.createConnection(1234,'127.0.0.1');
+//CONEXION TELNET
+var telnetCon = require('./telnet');
 
 
-function sendData(socket, data) {
-    socket.write(data + "\n");
-}
 
-conn.on('connect', function(){
-  console.log("Connected to telnet server.");
+//DATABASE
+mongoose.connect('mongodb://localhost/users', function(err, res) {
+    if(err) throw err;
+    console.log('Connected to Database');
 });
 
-conn.on('data', function(data){
-  console.log(data.toString());
-});
+var models = require('./models/user')(app, mongoose),
+    usersCtlr = require('./controllers/users'),
+    notificationsCtlr = require('./controllers/notifications');
 
-conn.on('close', function(){
-  conn.end();
-});
+//EXPRESS
+var router = express.Router();
 
-app.get('/', function(req, res){
-    sendData(conn, "msg ASL testNODE2");
-    conn.end();
-    res.send("Message sent!");
-});
+router.route('/users')
+      .get(usersCtlr.findAllUsers)
+      .post(function(req, res){
+        usersCtlr.addUser(req,res,telnetCon);
+      });
 
-app.listen(8080);
+router.route('/users/:id')
+      .get(usersCtlr.findByID)
+      .post(usersCtlr.updateUser)
+      .delete(usersCtlr.deleteUser);
+
+router.route('/notifications')
+      .post(function(req, res){
+        notificationsCtlr.sendNotification(req,res,telnetCon, dirname);
+      });
+
+app.use(router);
+
+app.listen(8080, function(){
+  console.log("Express server listening in port 8080");
+});
