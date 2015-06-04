@@ -1,14 +1,20 @@
 var exec = require('child_process').exec,
-    home = process.env.HOME,
-    command = "cd " + home + "/tg/ && bin/telegram-cli -vvvvRC -k tg-server.pub -W -dL tg.log -P 1234 -l 1 -E",
-    http = require('http'),
-    express = require('express'),
     bodyParser      = require("body-parser"),
     methodOverride  = require("method-override"),
     mongoose        = require('mongoose'),
+    colors          = require('colors'),
+    http = require('http'),
+    express = require('express');
+
+
+var home = process.env.HOME,
+    command = "cd " + home + "/tg/ && bin/telegram-cli -vvvvRC -k tg-server.pub -W -dL tg.log -P 1234 -l 1 -E",
     app = express(),
-    child,
-    dirname = __dirname;
+    port = 8080;
+
+console.log("-----------------------------------------");
+console.log("|           " + "ARTIGRAM-SERVER".bold.yellow + "             |");
+console.log("-----------------------------------------");
 
 // MIDDLEWARES
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -16,12 +22,8 @@ app.use(bodyParser.json());
 app.use(methodOverride());
 
 // EJECUCION PROCESO
-child = exec(command, function(){
-    console.log("Telegram process initiated with PID " + child.pid);
-});
-
-child.stdout.on('data', function(data) {
-    console.log('stdout: ' + data);
+var child = exec(command, function(){
+    console.log("TELEGRAM PROCESS (PID " + child.pid + ") - " + "OK".green);
 });
 
 //CONTROL SALIDA
@@ -29,46 +31,50 @@ process.on('exit', function(){
     console.log("EXIT NODE");
 });
 
-process.on('uncaughtException', function(){
-    console.log("uncaughtException");
+process.on('uncaughtException', function(err){
+    console.log("uncaughtException: ".bold.red + err);
 });
 
 //CONEXION TELNET
-var telnetCon = require('./telnet');
-
-
-
-//DATABASE
-mongoose.connect('mongodb://localhost/users', function(err, res) {
-    if(err) throw err;
-    console.log('Connected to Database');
-});
+if(child){
+  var telnetCon = require('./telnet');
+}
 
 var models = require('./models/user')(app, mongoose),
     usersCtlr = require('./controllers/users'),
-    notificationsCtlr = require('./controllers/notifications');
+    notificationsCtlr = require('./controllers/notifications'),
+    authCtrl = require('./controllers/auth'),
+    tokens = require('./middlewares/tokens');
 
 //EXPRESS
 var router = express.Router();
 
+router.route('/login')
+      .post(authCtrl.login);
+
 router.route('/users')
-      .get(usersCtlr.findAllUsers)
-      .post(function(req, res){
+      .get(tokens.ensureAuthenticated, usersCtlr.findAllUsers)
+      .post(tokens.ensureAuthenticated, function(req, res){
         usersCtlr.addUser(req,res,telnetCon);
       });
 
 router.route('/users/:id')
-      .get(usersCtlr.findByID)
-      .post(usersCtlr.updateUser)
-      .delete(usersCtlr.deleteUser);
+      .get(tokens.ensureAuthenticated, usersCtlr.findByID)
+      .post(tokens.ensureAuthenticated, usersCtlr.updateUser)
+      .delete(tokens.ensureAuthenticated, usersCtlr.deleteUser);
 
 router.route('/notifications')
-      .post(function(req, res){
-        notificationsCtlr.sendNotification(req,res,telnetCon, dirname);
+      .post(tokens.ensureAuthenticated, function(req, res){
+        notificationsCtlr.sendNotification(req,res,telnetCon);
       });
 
 app.use(router);
 
-app.listen(8080, function(){
-  console.log("Express server listening in port 8080");
+//DATABASE
+mongoose.connect('mongodb://localhost/users', function(err, res) {
+    if(err) throw err;
+    console.log("CONNECTION TO DATABASE - " + "OK".green);
+    app.listen(port, function(){
+      console.log("EXPRESS SERVER (PORT " + port + ") - " + "OK".green);
+    });
 });

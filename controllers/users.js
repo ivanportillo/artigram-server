@@ -2,9 +2,7 @@ var mongoose = require('mongoose'),
     User = mongoose.model('User');
 
 var addContact = function(firstName, lastName, phone, socket){
-  socket.write("add_contact " + phone + " " + firstName + " " + lastName + "\n", function(msg){
-    console.log("DATA: " + msg);
-  });
+  socket.write("add_contact " + phone + " " + firstName + " " + lastName + "\n");
 }
 
 exports.findAllUsers = function(req, res){
@@ -29,7 +27,6 @@ exports.findByID = function(req, res){
 
 exports.addUser = function(req, res, socket){
     console.log("POST");
-    console.log(req.body);
 
     var user = new User({
         firstName: req.body.firstName,
