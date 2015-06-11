@@ -31,6 +31,12 @@ function isPartOfGroup(group, user){
 
 exports.sendNotification = function(req, res, socket, dirname){
   var image = false;
+  if(!req.body.message){
+    return res.status(400).send({message: "Message is required"});
+  }
+  else if(!req.body.groups){
+    return res.status(400).send({message: "Groups are required"});
+  }
   User.find(function(err, users){
     if(err){
       return res.send(500, err.message);
@@ -55,6 +61,6 @@ exports.sendNotification = function(req, res, socket, dirname){
       }
     }
 
-    res.send("Notification sent");
+    return res.status(200).send({message:"Notification sent"});
   });
 }

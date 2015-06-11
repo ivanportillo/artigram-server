@@ -6,7 +6,7 @@ exports.login = function(req, res){
         return res.status(200).send({token: service.createToken(req.body.user)});
       }
       else{
-        return res.send(500, "Incorrect user or password"); //FALTA COMPROBAR CODIGO
+        return res.status(400).send({message:"Incorrect user or password"});
       }
     }
     else if(req.body.user == "client"){ //CLIENT
@@ -14,10 +14,10 @@ exports.login = function(req, res){
         return res.status(200).send({token: service.createToken(req.body.user)});
       }
       else{
-        return res.send(500, "Incorrect user or password"); //FALTA COMPROBAR CODIGO
+        return res.status(400).send({message:"Incorrect user or password"});
       }
     }
     else{ //USER DON'T EXIST
-      return res.send(500, "Incorrect user or password"); //FALTA COMPROBAR CODIGO
+    return res.status(400).send({message:"Incorrect user or password"});
     }
 };

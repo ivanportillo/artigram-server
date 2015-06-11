@@ -21,11 +21,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(methodOverride());
 
-// EJECUCION PROCESO
-var child = exec(command, function(){
-    console.log("TELEGRAM PROCESS (PID " + child.pid + ") - " + "OK".green);
-});
-
 //CONTROL SALIDA
 process.on('exit', function(){
     console.log("EXIT NODE");
@@ -34,11 +29,6 @@ process.on('exit', function(){
 process.on('uncaughtException', function(err){
     console.log("uncaughtException: ".bold.red + err);
 });
-
-//CONEXION TELNET
-if(child){
-  var telnetCon = require('./telnet');
-}
 
 var models = require('./models/user')(app, mongoose),
     usersCtlr = require('./controllers/users'),
@@ -53,18 +43,18 @@ router.route('/login')
       .post(authCtrl.login);
 
 router.route('/users')
-      .get(tokens.ensureAuthenticated, usersCtlr.findAllUsers)
-      .post(tokens.ensureAuthenticated, function(req, res){
+      .get(tokens.ensureAuthenticatedAdmin, usersCtlr.findAllUsers)
+      .post(tokens.ensureAuthenticatedUser, function(req, res){
         usersCtlr.addUser(req,res,telnetCon);
       });
 
 router.route('/users/:id')
-      .get(tokens.ensureAuthenticated, usersCtlr.findByID)
-      .post(tokens.ensureAuthenticated, usersCtlr.updateUser)
-      .delete(tokens.ensureAuthenticated, usersCtlr.deleteUser);
+      .get(tokens.ensureAuthenticatedAdmin, usersCtlr.findByID)
+      .post(tokens.ensureAuthenticatedAdmin, usersCtlr.updateUser)
+      .delete(tokens.ensureAuthenticatedAdmin, usersCtlr.deleteUser);
 
 router.route('/notifications')
-      .post(tokens.ensureAuthenticated, function(req, res){
+      .post(tokens.ensureAuthenticatedAdmin, function(req, res){
         notificationsCtlr.sendNotification(req,res,telnetCon);
       });
 
@@ -74,6 +64,15 @@ app.use(router);
 mongoose.connect('mongodb://localhost/users', function(err, res) {
     if(err) throw err;
     console.log("CONNECTION TO DATABASE - " + "OK".green);
+    // EJECUCION PROCESO
+    var child = exec(command, function(){
+        console.log("TELEGRAM PROCESS (PID " + child.pid + ") - " + "OK".green);
+    });
+    //CONEXION TELNET
+    if(child){
+      var telnetCon = require('./telnet');
+    }
+    //EXPRESS INIT
     app.listen(port, function(){
       console.log("EXPRESS SERVER (PORT " + port + ") - " + "OK".green);
     });
